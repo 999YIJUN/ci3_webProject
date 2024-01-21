@@ -83,6 +83,11 @@ use Google\Service\CloudSearch\Id;
                                                 <?= $this->session->flashdata('password_check'); ?>
                                             </div>
                                         <?php endif; ?>
+                                        <?php if ($this->session->flashdata('verified_checked')) : ?>
+                                            <div class="alert alert-danger">
+                                                <?= $this->session->flashdata('verified_checked'); ?>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="d-grid my-3">
                                         <?= form_submit(array(
@@ -99,16 +104,16 @@ use Google\Service\CloudSearch\Id;
                                 <span class="text-secondary">沒有帳號?</span>
                                 <?= anchor('user/signup', '註冊', array('class' => 'link-primary text-decoration-none')); ?>
                             </div>
-                            <div class="col-12 col-lg-2 d-flex align-items-center justify-content-center gap-3 flex-lg-column">
-                                <div class="bg-dark h-100 d-none d-lg-block" style="width: 1px; --bs-bg-opacity: .1;">
+                            <div class="col-12 col-lg-12 d-flex align-items-center justify-content-center gap-3 flex-xxl-column">
+                                <div class="bg-dark h-100 d-none d-xxl-block" style="width: 1px; --bs-bg-opacity: .1;">
                                 </div>
-                                <div class="bg-dark w-100 d-lg-none" style="height: 1px; --bs-bg-opacity: .1;"></div>
-                                <div class="">or</div>
-                                <div class="bg-dark h-100 d-none d-lg-block" style="width: 1px; --bs-bg-opacity: .1;">
+                                <div class="bg-dark w-100 d-xxl-none" style="height: 1px; --bs-bg-opacity: .1;"></div>
+                                <div class="">或</div>
+                                <div class="bg-dark h-100 d-none d-xxl-block" style="width: 1px; --bs-bg-opacity: .1;">
                                 </div>
-                                <div class="bg-dark w-100 d-lg-none" style="height: 1px; --bs-bg-opacity: .1;"></div>
+                                <div class="bg-dark w-100 d-xxl-none" style="height: 1px; --bs-bg-opacity: .1;"></div>
                             </div>
-                            <div class="col-12 col-lg-5 d-flex align-items-center pt-3">
+                            <div class="col-12 col-lg-12 d-flex align-items-center pt-3">
                                 <div class="d-flex gap-3 flex-column w-100">
                                     <button href="#!" class="btn btn-lg btn-success">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 262" fill="currentColor" class="bi bi-google text-danger">
@@ -117,7 +122,7 @@ use Google\Service\CloudSearch\Id;
                                             <path fill="#FBBC05" d="M56.281 156.37c-2.756-8.123-4.351-16.827-4.351-25.82c0-8.994 1.595-17.697 4.206-25.82l-.073-1.73L15.26 71.312l-1.335.635C5.077 89.644 0 109.517 0 130.55s5.077 40.905 13.925 58.602z" />
                                             <path fill="#EB4335" d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0C79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251" />
                                         </svg>
-                                        <span class="ms-2 fs-6">Log in with Google</span>
+                                        <span class="ms-2 fs-6">使用 Google 帳號繼續</span>
                                     </button>
                                 </div>
                             </div>

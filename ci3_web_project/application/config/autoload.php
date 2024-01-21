@@ -62,6 +62,7 @@ $autoload['libraries'] = [
     'session',
     'database',
     'form_validation',
+    'email'
 ];
 
 /*
@@ -95,7 +96,9 @@ $autoload['drivers'] = array();
 */
 $autoload['helper'] = [
     'url',
-    'form'
+    'form',
+    'html',
+    'file'
 ];
 
 /*

@@ -15,12 +15,16 @@
 </head>
 
 <body class="d-flex flex-column bg-light">
-
     <main class="py-3 py-md-5">
         <div class="container">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title fs-2">帳號設定</h5>
+                    <?= form_open('user/signout'); ?>
+                    <div class="row g-3">
+                        <h5 class="card-title fs-2 col-9 col-sm-10 col-md-10">帳號設定</h5>
+                        <button type="submit" class="btn btn-outline-secondary col-3 col-sm-2 col-md-2">登出</button>
+                    </div>
+                    <?= form_close(); ?>
                     <div class="row g-3">
                         <div class="col-md-12">
                             <?= form_label('信箱', 'email', ['class' => 'form-label']); ?>
@@ -37,15 +41,20 @@
                         </div>
                         <div class="col-md-12">
                             <?= form_label('密碼', 'password', array('class' => 'form-label')); ?>
-                            <?= form_password([
-                                'name' => 'password',
-                                'id' => 'password',
-                                'class' => 'form-control',
-                                'value' => $user->password,
-                                'placeholder' => '',
-                                'required' => 'required',
-                                'disabled' => 'disabled'
-                            ]) ?>
+                            <div class="input-group">
+                                <?= form_password([
+                                    'name' => 'password',
+                                    'id' => 'password',
+                                    'class' => 'form-control',
+                                    'value' => $user->password,
+                                    'placeholder' => '',
+                                    'required' => 'required',
+                                    'disabled' => 'disabled'
+                                ]) ?>
+                                <div class="input-group-append">
+                                    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#passwordModal">修改</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <hr>
@@ -58,7 +67,7 @@
                         </div>
                         <div class="col-md-6">
                             <?= form_label('電話', 'contact_number', ['class' => 'form-label']); ?>
-                            <input type="text" name="contact_number" id="contact_number" class="form-control" value="<?= $user->contact_number ?>">
+                            <input type="text" name="contact_number" id="contact_number" class="form-control" value="<?= $user->contact_number ?>" maxlength="10">
                         </div>
                         <div class="col-md-6">
                             <?= form_label('生日', 'birthday', ['class' => 'form-label']); ?>
@@ -67,7 +76,7 @@
                         <hr>
                         <div class="col-md-6">
                             <?= form_label('縣市', 'city', ['class' => 'form-label']); ?>
-                            <select id="city" class="form-select">
+                            <select name="city" id="city" class="form-select">
                                 <option value="citySelect">選擇縣市</option>
                                 <?php foreach ($tw_cities as $city) : ?>
                                     <?php
@@ -82,7 +91,7 @@
                         </div>
                         <div class="col-md-4">
                             <?= form_label('區', 'district', ['class' => 'form-label']); ?>
-                            <select id="district" class="form-select">
+                            <select name="district" id="district" class="form-select">
                                 <option value="districtSelect">選擇區域</option>
                                 <?php foreach ($tw_cities as $city) : ?>
                                     <?php
@@ -104,16 +113,21 @@
                         </div>
                         <div class="col-md-2">
                             <?= form_label('郵遞區號', 'zip', ['class' => 'form-label']); ?>
-                            <input type="text" name="zip" id="zip" class="form-control" value="<?= $user->zip ?>">
+                            <input type="text" name="zip" id="zip" class="form-control" value="<?= $user->zip ?>" readonly>
                         </div>
                         <div class="col-md-12">
                             <?= form_label('地址', 'address', ['class' => 'form-label']); ?>
                             <input type="text" name="address" id="address" class="form-control" value="<?= $user->address ?>">
                         </div>
-                        <div class="text-end">
-                            <button id="btnEdit" class="btn btn-primary" data-id="<?= $user->user_id; ?>">修改</button>
+                        <div class="col-md-12">
+                            <div class="alert alert-success d-none" id="success_message">
+                            </div>
+                            <div class="text-end">
+                                <button id="btnEdit" class="btn btn-primary" data-id="<?= $user->user_id; ?>">修改</button>
+                            </div>
                         </div>
                     </form>
+                    <?php $this->load->view('modal'); ?>
                 </div>
             </div>
         </div>
@@ -130,7 +144,7 @@
 
             citySelect.addEventListener('change', function() {
                 let citySelected = this.value;
-                districtSelect.innerHTML = `<option value="${'選擇縣市'}">選擇縣市</option>`;
+                districtSelect.innerHTML = `<option value="districtSelect">選擇區域</option>`;
                 zipValue.value = '';
                 const cityData = citiesJson.find(city => city.name == citySelected);
 
@@ -146,7 +160,7 @@
                 let districtSelected = this.value;
                 let citySelected = citySelect.value;
                 const cityData = citiesJson.find(city => city.name == citySelected);
-
+                zipValue.value = '';
                 if (cityData) {
                     let districtData = cityData.districts.find(district => district.name == districtSelected);
 
@@ -159,24 +173,24 @@
         });
 
 
-
         $(document).ready(function() {
             $("#btnEdit").click(function(event) {
                 event.preventDefault();
-                var id = $(this).data("id");
-                var postData = {
-                    id: id,
-                    username: $('#username').val(),
-                    contact_number: $('#contact_number').val(),
-                    birthday: $('#birthday').val(),
-                    city: $('#city').val(),
-                    district: $('#district').val(),
-                    zip: $('#zip').val(),
-                    address: $('#address').val()
-                };
-
+                // var id = $(this).data("id");
+                const postData = $('form').serialize();
                 axios.post("<?= site_url('user/edit'); ?>", postData)
                     .then(function(response) {
+                        const get_data = response.data;
+                        const elementId = $('#success_message');
+                        if (get_data.success) {
+                            elementId.html(get_data.message);
+                            elementId.removeClass('alert-danger').addClass('alert-success');
+                        } else {
+                            elementId.removeClass('alert-success').addClass('alert-danger');
+                            elementId.html(get_data.message);
+                        }
+
+                        elementId.toggleClass('d-none', false);
                         console.log('成功:', response.data);
                     })
                     .catch(function(error) {

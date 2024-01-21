@@ -19,15 +19,23 @@ class MY_Form_validation extends CI_Form_validation
 
     public function check_email($email)
     {
-        $allowedDomains = array('.com', '.net', '.org', '.edu', '.gov', '.info', '.co', '.io');
+        $allowed_domains = array('.com', '.net', '.org', '.edu', '.gov', '.info', '.co', '.io');
 
-        // 提取郵箱地址的領域部分
-        $domain = substr(strrchr($email, "@"), 1);
+        // 尋找 '@' 符號的索引
+        $at_position = strrpos($email, '@');
 
-        // 檢查郵箱地址的領域名稱是否在允許的領域名稱清單中
-        if (!in_array($domain, $allowedDomains)) {
-            return FALSE;
+        // 取得郵箱結尾 / substr(string, start, ?length)
+        $domain = substr($email, $at_position + 1);
+
+        // 檢查是否在允許的域名清單中
+        $valid_domain = false;
+        foreach ($allowed_domains as $allowed) {
+            if (strtolower(substr($domain, -strlen($allowed))) === $allowed) {
+                $valid_domain = true;
+                break;
+            }
         }
-        return TRUE;
+
+        return $valid_domain;
     }
 }

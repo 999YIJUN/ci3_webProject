@@ -32,13 +32,13 @@ class User extends CI_Controller
     {
         $this->form_validation->set_rules('password', '密碼', 'required|max_length[20]|min_length[8]');
         $this->form_validation->set_rules('password_confirm', '密碼確認', 'required|matches[password]');
-        $this->form_validation->set_rules('email', '信箱', 'required|valid_email|callback_check_email');
+        $this->form_validation->set_rules('email', '信箱', 'required|valid_email|check_email');
 
         //$this->form_validation->set_message('required', '請填寫 %s');
         $this->form_validation->set_custom_error_messages();
         $captcha_check = $this->captcha_validate();
 
-        if (!$this->form_validation->run() || $captcha_check) {
+        if (!$this->form_validation->run() || !$captcha_check) {
             // $error_message = validation_errors(); // 取得表單驗證錯誤訊息
 
             if (form_error('password')) {
@@ -61,6 +61,7 @@ class User extends CI_Controller
                 $unique_code = uniqid();
                 $user_data = [
                     "username" => $this->input->post('username'),
+                    // password_hash 字串長度為60
                     "password" => password_hash($this->input->post('password'), PASSWORD_DEFAULT),
                     "email" => $email,
                     'unique_code' => $unique_code
@@ -132,6 +133,7 @@ class User extends CI_Controller
         }
     }
 
+    // 
     public function send_email_setting($to, $subject, $message)
     {
         $this->load->config("email");
@@ -145,15 +147,16 @@ class User extends CI_Controller
         return $this->email->send();
     }
 
+    // 發信驗證
     public function verify($code)
     {
         $user = $this->user_model->getUserByUniqueCode($code);
 
-        if ($user && $user['is_verified'] == 0) {
+        if ($user && $user->verified == 0) {
 
-            $this->user_model->update_user_verified($user['user_id']);
+            $this->user_model->update_user_verified($user->user_id);
             redirect("user/signin");
-        } elseif ($user && $user['is_verified'] == 1) {
+        } elseif ($user && $user->verified == 1) {
             echo "您的帳戶已經驗證過，請直接登入。";
         } else {
             echo "驗證失敗";
@@ -171,9 +174,14 @@ class User extends CI_Controller
         $password = $this->input->post('password');
         $user = $this->user_model->get_user_by_email($email);
         if ($user && password_verify($password, $user->password)) {
-            $this->session->set_userdata('user_info', $user);
+            if ($user->verified == 1) {
+                $this->session->set_userdata('user_info', $user);
 
-            redirect("user/index");
+                redirect("user/index");
+            } else {
+                $this->session->set_flashdata('verified_checked', '尚未完成驗證，請先確認您的郵件以完成註冊確認。');
+                redirect('user/signin');
+            }
         } else {
             if (!$user) {
                 $this->session->set_flashdata('user_check', '無此用戶,請先註冊');
@@ -185,53 +193,101 @@ class User extends CI_Controller
         }
     }
 
+    public function edit_password()
+    {
+        $this->form_validation->set_rules('password_reset', '密碼', 'required|max_length[20]|min_length[8]');
+        $this->form_validation->set_rules('password_confirm', '密碼確認', 'required|matches[password_reset]');
+
+        $this->form_validation->set_custom_error_messages();
+        $data = $this->session->userdata('user_info');
+        $id = $data->user_id;
+
+        if (!$this->form_validation->run()) {
+            $error_data = [
+                'error' => true,
+                'password' => form_error('password_reset'),
+                'password_confirm' => form_error('password_confirm')
+            ];
+        } else {
+            $user_data = [
+                'password' => password_hash($this->input->post('password_reset'), PASSWORD_DEFAULT)
+            ];
+            $error_data = [
+                'success' => true,
+            ];
+
+            $this->user_model->update_user($id, $user_data);
+        }
+
+        echo json_encode($error_data);
+    }
+
     public function edit()
     {
         // 使用 file_get_contents('php://input') 來接收 JSON 資料
-        $receivedData = json_decode(file_get_contents('php://input'), true);
+        // $receivedData = json_decode(file_get_contents('php://input'), true);
 
-        // $user = $this->session->userdata('user_info');
-        // $id = $user->user_id;
-        $id = $receivedData['id'];
+        $user = $this->session->userdata('user_info');
         $data = [];
         // 檢查並設置非空值
-        if (!empty($receivedData['username'])) {
-            $data['username'] = $receivedData['username'];
+        $id = $user->user_id;
+        $username = $this->input->post('username');
+        $contact_number = $this->input->post('contact_number');
+        $birthday = $this->input->post('birthday');
+        $city = $this->input->post('city');
+        $district = $this->input->post('district');
+        $zip = $this->input->post('zip');
+        $address = $this->input->post('address');
+        if (!empty($username)) {
+            $data['username'] = $username;
         }
-        if (!empty($receivedData['contact_number'])) {
-            $data['contact_number'] = $receivedData['contact_number'];
+        if (!empty($contact_number)) {
+            $data['contact_number'] = $contact_number;
         }
-        if (!empty($receivedData['birthday'])) {
-            $data['birthday'] = $receivedData['birthday'];
+        if (!empty($birthday)) {
+            $data['birthday'] = $birthday;
         }
-        if (!empty($receivedData['city'])) {
-            $data['city'] = $receivedData['city'];
+        if (!empty($city) && $city !== 'citySelect') {
+            $data['city'] = $city;
         }
-        if (!empty($receivedData['district'])) {
-            $data['district'] = $receivedData['district'];
+        if (!empty($district) && $district !== 'districtSelect') {
+            $data['district'] = $district;
         }
-        if (!empty($receivedData['zip'])) {
-            $data['zip'] = $receivedData['zip'];
+        if (!empty($zip)) {
+            $data['zip'] = $zip;
         }
-        if (!empty($receivedData['address'])) {
-            $data['address'] = $receivedData['address'];
+        if (!empty($address)) {
+            $data['address'] = $address;
         }
+        $beforeData = $this->user_model->get_user_by_id($id);
         if (!empty($data)) {
-            $this->user_model->update_user($id, $data);
-            // 更新成功後，獲取最新的用戶資訊
-            $updatedUserData = $this->user_model->get_user_by_id($id);
-            // 將最新的用戶資訊設置到 session 中
-            $this->session->set_userdata('user_info', $updatedUserData);
 
-            $response = array(
-                'success' => true,
-                'message' => 'User information updated successfully',
-                'user' => $updatedUserData
-            );
+            $this->user_model->update_user($id, $data);
+            $afterData = $this->user_model->get_user_by_id($id);
+            if ($beforeData != $afterData) {
+                // 保持在用戶最新資訊
+                $this->session->set_userdata('user_info', $afterData);
+
+                $response = array(
+                    'success' => true,
+                    'message' => '完成更新',
+                    'user' => $beforeData,
+                    'users' => $afterData
+                );
+            } else {
+                $response = array('success' => false, 'message' => '沒有更新的內容', 'user' => $beforeData, 'users' => $afterData);
+            }
         } else {
-            $response = array('success' => false, 'message' => 'No specific data to update');
+            $response = array('success' => false, 'message' => '沒有更新的內容');
         }
 
         echo json_encode($response);
+    }
+
+    public function signout()
+    {
+        $this->session->unset_userdata('user_info');
+
+        redirect('user/signin');
     }
 }

@@ -26,6 +26,12 @@ class user_model extends CI_Model
         return $query->row();
     }
 
+    public function getUserByUniqueCode($code)
+    {
+        $query = $this->db->get_where('users', ['unique_code' => $code]);
+        return $query->row();
+    }
+
     public function insert_user($data)
     {
         $this->db->insert('users', $data);
@@ -36,6 +42,19 @@ class user_model extends CI_Model
     {
         $this->db->where('user_id', $id);
         $this->db->update('users', $data);
+        return $this->db->affected_rows();
+    }
+
+    public function update_user_verified($id)
+    {
+        $data = [
+            'verified' => 1
+        ];
+
+
+        $this->db->where('user_id', $id);
+        $this->db->update('users', $data);
+
         return $this->db->affected_rows();
     }
 
