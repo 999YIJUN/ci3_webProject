@@ -247,7 +247,7 @@ class User extends CI_Controller
         if (!empty($birthday)) {
             $data['birthday'] = $birthday;
         }
-        if (!empty($city) && $city !== 'citySelect') {
+        if (!empty($city) && $city !== 'citySelect' && $district !== 'districtSelect') {
             $data['city'] = $city;
         }
         if (!empty($district) && $district !== 'districtSelect') {
@@ -290,4 +290,125 @@ class User extends CI_Controller
 
         redirect('user/signin');
     }
+
+    public function user_data()
+    {
+        $this->load->view('user_data');
+    }
+
+    public function get_data()
+    {
+        $this->load->library('ssp');
+        $dbDetails = array(
+            'host' => $this->db->hostname,
+            'user' => $this->db->username,
+            'pass' => $this->db->password,
+            'db'   => $this->db->database
+        );
+        $table = 'users';
+        $primaryKey = 'user_id';
+        // DataTables 設定
+        $columns = array(
+            array(
+                'db' => 'user_id', 'dt' => 0
+            ),
+            array(
+                'db' => 'username', 'dt' => 1
+            ),
+            array(
+                'db' => 'sort', 'dt' => 2,
+                'formatter' => function ($data, $row) {
+                    return '<input type="text" class="form-control sort-input" value="' . $row['sort'] . '" data-user-id="' . $row['user_id'] . '" />';
+                }
+            ),
+            array(
+                'db' => 'user_id',
+                'dt' => 3,
+                'formatter' => function ($data, $row) {
+                    return '<button class="btn btn-sm btn-primary btnEdit" data-user-id="' . $row['user_id'] . '" data-sort="' . $row['sort'] . '">按鈕</button>';
+                }
+            )
+        );
+
+        $output = $this->ssp->simple($this->input->get(), $dbDetails, $table, $primaryKey, $columns);
+
+        echo json_encode($output);
+    }
+
+    public function edit_sort()
+    {
+        $user_id = $this->input->post('user_id');
+        $new_sort_value = $this->input->post('new_sort_value');
+        $response = [];
+        $current_sort_value = $this->user_model->get_sort_value($user_id);
+
+        if ($new_sort_value == $current_sort_value) {
+            $response = ['status' => 'error', 'message' => '新的排序值與原本的值相同'];
+        } else {
+            $data = ['sort' => $new_sort_value];
+
+            if ($this->user_model->is_sort_value_exists($new_sort_value)) {
+                $check_users = $this->user_model->checked_sort($new_sort_value);
+
+                foreach ($check_users as $check_user) {
+                    $check_user_id = $check_user['user_id'];
+                    $check_sort = $check_user['sort'];
+
+                    $this->user_model->update_user($check_user_id, ['sort' => $check_sort + 1]);
+                }
+
+                $this->user_model->update_user($user_id, $data);
+                $response = ['status' => 'error', 'message' => '已有重複值'];
+            } else {
+                $this->user_model->update_user($user_id, $data);
+                $response = ['status' => 'success'];
+            }
+        }
+
+        $this->output->set_content_type('application/json')->set_output(json_encode($response));
+        //     header('Content-Type: application/json');
+        //     echo json_encode($response);
+    }
+
+    // public function edit_sort()
+    // {
+    //     $user_id = $this->input->post('user_id');
+    //     $new_sort_value = $this->input->post('new_sort_value');
+    //     $response = [];
+    //     $current_sort_value = $this->user_model->get_sort_value($user_id);
+
+    //     if ($new_sort_value == $current_sort_value) {
+    //         $response = ['status' => 'error', 'message' => '新的排序值與原本的值相同'];
+    //     } else {
+    //         $data = ['sort' => $new_sort_value];
+
+    //         if ($this->user_model->is_sort_value_exists($new_sort_value)) {
+
+    //             $original_sort_value = $this->user_model->get_sort_value($user_id);
+
+    //             $this->user_model->swap_sort_values($original_sort_value, $new_sort_value);
+    //             $this->user_model->update_user($user_id, $data);
+    //             $response = ['status' => 'error', 'message' => '已有重複值'];
+    //         } else {
+    //             $this->user_model->update_user($user_id, $data);
+    //             $response = ['status' => 'success'];
+    //         }
+    //     }
+
+    //     $this->output->set_content_type('application/json')->set_output(json_encode($response));
+    // }
+
+
+
+    // $searchFilter = array();
+    // if (!empty($this->input->get('search_keywords'))) {
+    //     $searchFilter['search'] = array(
+    //         'user_id' => $this->input->get('search_keywords')
+    //     );
+    // }
+    // if (!empty($this->input->get('filter_option'))) {
+    //     $searchFilter['filter'] = array(
+    //         'username' => $this->input->get('filter_option')
+    //     );
+    // }
 }

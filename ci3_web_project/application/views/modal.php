@@ -108,7 +108,11 @@
 
                             // 使用 setTimeout 延遲顯示 alert
                             setTimeout(function() {
-                                alert('成功');
+                                Swal.fire({
+                                    title: "成功!",
+                                    text: "已完成密碼更新!",
+                                    icon: "success"
+                                });
                             }, 100);
                             console.log('成功:', response.data);
                         }
